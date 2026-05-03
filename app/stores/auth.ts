@@ -16,6 +16,8 @@ export const useAuthStore = defineStore("auth", () => {
   const token = ref<string | null>(null);
   const isAuthenticated = computed(() => !!token.value && !!user.value);
 
+  const config = useRuntimeConfig();
+
   const tokenCookie = useCookie("trellis_token", {
     maxAge: 60 * 60 * 24 * 30,
     sameSite: "lax",
@@ -35,7 +37,6 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function fetchUser() {
-    const config = useRuntimeConfig();
     console.log("fetchUser - token:", token.value);
     try {
       const data = await $fetch<{ user: User }>("/api/v1/me", {
@@ -51,8 +52,11 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
+  function setUser(newUser: any) {
+    user.value = newUser;
+  }
+
   async function login(email: string, password: string, remember: boolean) {
-    const config = useRuntimeConfig();
     const data = await $fetch<{ token: string }>("/api/v1/login", {
       method: "POST",
       baseURL: config.public.apiBase,
@@ -64,7 +68,6 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function logout() {
-    const config = useRuntimeConfig();
     try {
       await $fetch("/api/v1/logout", {
         method: "POST",
@@ -107,5 +110,6 @@ export const useAuthStore = defineStore("auth", () => {
     init,
     setToken,
     fetchUser,
+    setUser,
   };
 });

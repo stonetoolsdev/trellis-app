@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CalendarDays, MapPin, Video, Users, ChevronRight } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import EventTaskLists from '~/components/events/EventTaskLists.vue'
+import EventDetails from '~/components/events/EventDetails.vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -170,7 +170,7 @@ async function handleAddComment() {
         </div>
       </div>
 
-      <EventTaskLists :event-id="event.data.id"
+      <TaskLists context-type="event" :context-id="event.data.id"
         :task-lists="event.data.task_lists" @refresh="refresh()" />
 
       <!-- Comments -->

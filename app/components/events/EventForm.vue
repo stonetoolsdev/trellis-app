@@ -111,13 +111,12 @@ async function handleSave(mode: 'draft' | 'submit' = 'draft') {
       <select v-model="form.type"
         class="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring">
         <option value="">Select type</option>
-        <option value="fundraiser">Fundraiser</option>
-        <option value="conference">Conference</option>
-        <option value="workshop">Workshop</option>
-        <option value="gala">Gala</option>
-        <option value="community">Community Event</option>
-        <option value="volunteer">Volunteer Event</option>
-        <option value="webinar">Webinar</option>
+        <option value="internal-grounding">Internal Grounding</option>
+        <option value="outreach">Outreach</option>
+        <option value="published-analysis">Published Analysis</option>
+        <option value="speak-out">Speak Out</option>
+        <option value="teach-in">Teach-In</option>
+        <option value="town-hall">Town Hall</option>
         <option value="other">Other</option>
       </select>
     </div>

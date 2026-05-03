@@ -1,4 +1,5 @@
 export function useApi<T>(path: string, options: object = {}) {
+  // if (import.meta.server) return;
   const config = useRuntimeConfig();
   const authStore = useAuthStore();
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { CalendarDays, MapPin, Video, Filter } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
+import EventForm from '~/components/events/EventForm.vue'
 
 definePageMeta({
   middleware: 'auth',

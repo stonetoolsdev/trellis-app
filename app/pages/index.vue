@@ -1,3 +1,6 @@
+<script setup lang="ts">
+navigateTo("/dashboard")
+</script>
 <template>
-  <div></div>
+  <p>Index</p>
 </template>
