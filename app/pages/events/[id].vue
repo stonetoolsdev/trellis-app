@@ -139,7 +139,7 @@ async function handleAddComment() {
         </div>
 
         <!-- Editable details -->
-        <EventDetails :event="event.data" :is-admin="isAdmin"
+        <EventDetails :event="event.data" :is-admin="isAdmin ?? false"
           @saved="refresh()" />
 
         <!-- Admin workflow actions -->
@@ -192,7 +192,7 @@ async function handleAddComment() {
             <div class="flex-1 space-y-1">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-medium">{{ comment.user.name
-                }}</span>
+                  }}</span>
                 <span class="text-xs text-muted-foreground">{{
                   formatDate(comment.created_at) }}</span>
               </div>

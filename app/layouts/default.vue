@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SidebarNav from '~/components/SidebarNav.vue'
 import { ref } from 'vue'
 import { CalendarDays, FolderKanban, CheckSquare, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-vue-next'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -10,20 +11,6 @@ const router = useRouter()
 const route = useRoute()
 
 const sidebarOpen = ref(true)
-
-const navItems = [
-  { label: 'My Tasks', icon: CheckSquare, to: '/tasks', children: null },
-  { label: 'Projects', icon: FolderKanban, to: '/projects', children: null },
-  {
-    label: 'Events',
-    icon: CalendarDays,
-    to: '/events',
-    children: [
-      { label: 'New Submissions', to: '/events/submissions', adminOnly: true },
-      { label: 'My Events', to: '/events/mine' },
-    ]
-  },
-]
 
 const userInitials = computed(() => {
   if (!authStore.user?.name) return '?'
@@ -50,7 +37,8 @@ async function handleLogout() {
       sidebarOpen ? 'w-60' : 'w-14'
     ]">
       <!-- Logo + Toggle -->
-      <div class="flex items-center justify-between px-3 py-4 h-14">
+      <div
+        class="flex items-center justify-between px-3 py-4 h-14 mb-8">
         <span v-if="sidebarOpen"
           class="font-semibold text-base tracking-tight text-sidebar-foreground">Trellis</span>
         <button
@@ -64,36 +52,8 @@ async function handleLogout() {
       <Separator />
 
       <!-- Nav -->
-      <nav class="flex-1 px-2 py-3 space-y-0.5">
-        <template v-for="item in navItems" :key="item.to">
-          <NuxtLink :to="item.to" :class="[
-            'flex items-center gap-3 px-2 py-2 rounded-md text-sm transition-colors',
-            route.path === item.to || (item.children && route.path.startsWith(item.to))
-              ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-          ]">
-            <component :is="item.icon" class="w-4 h-4 shrink-0" />
-            <span v-if="sidebarOpen" class="truncate">{{ item.label
-              }}</span>
-          </NuxtLink>
+      <SidebarNav :sidebar-open />
 
-          <!-- Children -->
-          <template v-if="item.children && sidebarOpen">
-            <NuxtLink
-              v-for="child in item.children.filter(c => !c.adminOnly || authStore.user?.roles?.includes('admin'))"
-              :key="child.to" :to="child.to" :class="[
-                'flex items-center gap-3 pl-9 pr-2 py-1.5 rounded-md text-sm transition-colors',
-                route.path.startsWith(child.to)
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                  : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-              ]">
-              <span class="truncate">{{ child.label }}</span>
-            </NuxtLink>
-          </template>
-        </template>
-      </nav>
-
-      <Separator />
 
       <!-- User -->
       <div class="p-2">
@@ -123,7 +83,7 @@ async function handleLogout() {
           <PopoverContent class="w-56 p-2" side="top" align="start">
             <div class="px-2 py-1.5 mb-1">
               <p class="text-sm font-medium">{{ authStore.user?.name
-                }}</p>
+              }}</p>
               <p class="text-xs text-muted-foreground">{{
                 authStore.user?.email }}</p>
             </div>
