@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarDays, MapPin, Video, ChevronRight } from 'lucide-vue-next'
+import { CalendarDays, MapPin, Video, ChevronRight, FolderKanban } from 'lucide-vue-next'
 
 const props = defineProps<{
   event: {
@@ -19,6 +19,7 @@ const emit = defineEmits<{
   'saved': []
 }>()
 
+const { data: projects } = await useApi<{ id: string, title: string }[]>('/api/v1/projects')
 const request = useApiRequest()
 
 async function handleFieldSave(field: string, value: string | null) {
@@ -96,5 +97,22 @@ async function handleFieldSave(field: string, value: string | null) {
       </div>
     </div>
 
+
+    <div class="flex items-start gap-3">
+      <FolderKanban
+        class="w-4 h-4 mt-2 text-muted-foreground shrink-0" />
+      <div class="flex-1 space-y-1">
+        <p class="text-xs text-muted-foreground">Project</p>
+        <select :value="event.project_id || ''"
+          class="w-full px-3 py-1.5 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+          @change="handleFieldSave('project_id', ($event.target as HTMLSelectElement).value || null)">
+          <option value="">No project</option>
+          <option v-for="project in projects" :key="project.id"
+            :value="project.id">
+            {{ project.title }}
+          </option>
+        </select>
+      </div>
+    </div>
   </div>
 </template>

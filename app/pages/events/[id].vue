@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { CalendarDays, MapPin, Video, Users, ChevronRight } from 'lucide-vue-next'
+import { CalendarDays, MapPin, Video, Users, ChevronRight, Camera } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import EventDetails from '~/components/events/EventDetails.vue'
+import EventRoleAssignments from '~/components/events/EventRoleAssignments.vue'
+import EventInventoryNeeds from '~/components/events/EventInventoryNeeds.vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -112,6 +114,28 @@ async function handleAddComment() {
     console.log('error:', e)
   }
 }
+
+const photoInput = ref<HTMLInputElement | null>(null)
+const photoLoading = ref(false)
+
+async function handlePhotoUpload(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  photoLoading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('photo', file)
+    await request(`/api/v1/events/${route.params.id}/photo`, {
+      method: 'POST',
+      body: formData,
+    })
+    refresh()
+  } catch (e: any) {
+    console.error('Photo upload failed:', e)
+  } finally {
+    photoLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -120,6 +144,8 @@ async function handleAddComment() {
       Loading...</div>
 
     <div v-else-if="event?.data" class="p-10 space-y-10 max-w-4xl">
+
+
 
       <!-- Header -->
       <div class="space-y-4">
@@ -136,6 +162,35 @@ async function handleAddComment() {
               {{ event.data.lifecycle_status.replace('_', ' ') }}
             </span>
           </div>
+        </div>
+
+        <!-- Featured Photo -->
+        <div class="relative">
+          <div v-if="event.data.featured_photo_url"
+            class="w-full h-48 rounded-xl overflow-hidden bg-muted">
+            <img :src="event.data.featured_photo_url"
+              class="w-full h-full object-cover" />
+          </div>
+          <div v-else
+            class="w-full h-48 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+            @click="photoInput?.click()">
+            <div class="text-center space-y-2">
+              <Camera class="w-8 h-8 text-muted-foreground mx-auto" />
+              <p class="text-sm text-muted-foreground">Click to upload
+                a featured photo</p>
+            </div>
+          </div>
+
+          <!-- Change photo button when photo exists -->
+          <button v-if="event.data.featured_photo_url"
+            class="absolute bottom-3 right-3 px-3 py-1.5 text-xs rounded-md bg-black/50 text-white hover:bg-black/70 transition-colors flex items-center gap-1.5"
+            @click="photoInput?.click()">
+            <Camera class="w-3.5 h-3.5" />
+            Change photo
+          </button>
+
+          <input ref="photoInput" type="file" accept="image/*"
+            class="hidden" @change="handlePhotoUpload" />
         </div>
 
         <!-- Editable details -->
@@ -173,6 +228,14 @@ async function handleAddComment() {
       <TaskLists context-type="event" :context-id="event.data.id"
         :task-lists="event.data.task_lists" @refresh="refresh()" />
 
+      <EventRoleAssignments :event-id="event.data.id"
+        :assignments="event.data.role_assignments || []"
+        @refresh="refresh()" />
+
+      <EventInventoryNeeds :event-id="event.data.id"
+        :inventory="event.data.inventory || []"
+        @refresh="refresh()" />
+
       <!-- Comments -->
       <div class="space-y-4">
         <h2 class="text-lg font-semibold">Comments</h2>
@@ -192,7 +255,7 @@ async function handleAddComment() {
             <div class="flex-1 space-y-1">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-medium">{{ comment.user.name
-                  }}</span>
+                }}</span>
                 <span class="text-xs text-muted-foreground">{{
                   formatDate(comment.created_at) }}</span>
               </div>

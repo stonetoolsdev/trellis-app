@@ -5,7 +5,9 @@ import { CalendarDays, FolderKanban, CheckSquare, Settings, LogOut, PanelLeftClo
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
+import SearchModal from '@/components/SearchModal.vue'
 
+const searchOpen = ref(false)
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
@@ -26,6 +28,16 @@ async function handleLogout() {
   await authStore.logout()
   router.push('/login')
 }
+
+// Cmd+K shortcut
+onMounted(() => {
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault()
+      searchOpen.value = true
+    }
+  })
+})
 </script>
 
 <template>
@@ -37,10 +49,10 @@ async function handleLogout() {
       sidebarOpen ? 'w-60' : 'w-14'
     ]">
       <!-- Logo + Toggle -->
-      <div
-        class="flex items-center justify-between px-3 py-4 h-14 mb-8">
+      <div class="flex items-center justify-between px-3 py-4 h-14">
         <span v-if="sidebarOpen"
-          class="font-semibold text-base tracking-tight text-sidebar-foreground">Trellis</span>
+          class="font-semibold text-base tracking-tight text-sidebar-foreground">
+        </span>
         <button
           class="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
           @click="sidebarOpen = !sidebarOpen">
@@ -83,7 +95,7 @@ async function handleLogout() {
           <PopoverContent class="w-56 p-2" side="top" align="start">
             <div class="px-2 py-1.5 mb-1">
               <p class="text-sm font-medium">{{ authStore.user?.name
-              }}</p>
+                }}</p>
               <p class="text-xs text-muted-foreground">{{
                 authStore.user?.email }}</p>
             </div>
@@ -110,13 +122,17 @@ async function handleLogout() {
       <!-- Top bar -->
       <header
         class="h-14 border-b border-border flex items-center px-4 shrink-0">
-        <div class="relative w-full max-w-md">
-          <Search
-            class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input type="text" placeholder="Search..."
-            class="w-full pl-9 pr-4 py-1.5 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
+        <button
+          class="relative w-full max-w-md flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground rounded-md border border-input bg-background hover:bg-accent transition-colors"
+          @click="searchOpen = true">
+          <Search class="w-4 h-4" />
+          <span>Search...</span>
+          <kbd
+            class="ml-auto text-xs px-1.5 py-0.5 rounded border border-border bg-muted">⌘K</kbd>
+        </button>
       </header>
+
+      <SearchModal v-if="searchOpen" @close="searchOpen = false" />
 
       <!-- Page content -->
       <main class="flex-1 overflow-auto">
