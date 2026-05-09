@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarDays, MapPin, Video, ChevronRight, FolderKanban } from 'lucide-vue-next'
+import { CalendarDays, MapPin, Video, ChevronRight, FolderKanban, Target } from 'lucide-vue-next'
 
 const props = defineProps<{
   event: {
@@ -7,6 +7,7 @@ const props = defineProps<{
     start_date: string | null
     end_date: string | null
     location: string | null
+    goals: string | null
     virtual_url: string | null
     description: string | null
     lifecycle_status: string | null
@@ -97,13 +98,25 @@ async function handleFieldSave(field: string, value: string | null) {
       </div>
     </div>
 
+    <div class="flex items-start gap-3">
+      <Target class="w-4 h-4 mt-2 text-muted-foreground shrink-0" />
+      <div class="flex-1 space-y-1">
+        <p class="text-xs text-muted-foreground">Goals & Objectives
+        </p>
+        <textarea :value="event.goals || ''" rows="3"
+          placeholder="What are the goals for this event?"
+          class="w-full px-3 py-1.5 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          @blur="handleFieldSave('goals', ($event.target as HTMLTextAreaElement).value || null)" />
+      </div>
+    </div>
+
 
     <div class="flex items-start gap-3">
       <FolderKanban
         class="w-4 h-4 mt-2 text-muted-foreground shrink-0" />
       <div class="flex-1 space-y-1">
         <p class="text-xs text-muted-foreground">Project</p>
-        <select :value="event.project_id || ''"
+        <!-- <select :value="event.project_id || ''"
           class="w-full px-3 py-1.5 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
           @change="handleFieldSave('project_id', ($event.target as HTMLSelectElement).value || null)">
           <option value="">No project</option>
@@ -111,7 +124,7 @@ async function handleFieldSave(field: string, value: string | null) {
             :value="project.id">
             {{ project.title }}
           </option>
-        </select>
+        </select> -->
       </div>
     </div>
   </div>

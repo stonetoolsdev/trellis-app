@@ -16,6 +16,7 @@ const isEditing = computed(() => !!props.eventId)
 const form = ref({
   title: '',
   description: '',
+  goals: '',
   type: '',
   format: 'in_person',
   location: '',
@@ -56,6 +57,7 @@ async function handleSave(mode: 'draft' | 'submit' = 'draft') {
     const body = {
       title: form.value.title,
       description: form.value.description || null,
+      goals: form.value.goals || null,
       type: form.value.type || null,
       format: form.value.format,
       location: form.value.format !== 'virtual' ? form.value.location || null : null,
@@ -103,6 +105,30 @@ async function handleSave(mode: 'draft' | 'submit' = 'draft') {
       <textarea v-model="form.description" rows="3"
         placeholder="Describe the event..."
         class="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+    </div>
+
+    <div class="flex items-start gap-3">
+      <Target class="w-4 h-4 mt-2 text-muted-foreground shrink-0" />
+      <div class="flex-1 space-y-1">
+        <p class="text-xs text-muted-foreground">Goals & Objectives
+        </p>
+        <textarea :value="event.goals || ''" rows="3"
+          placeholder="What are the goals for this event?"
+          class="w-full px-3 py-1.5 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          @blur="handleFieldSave('goals', ($event.target as HTMLTextAreaElement).value || null)" />
+      </div>
+    </div>
+
+    <div class="flex items-start gap-3">
+      <Target class="w-4 h-4 mt-2 text-muted-foreground shrink-0" />
+      <div class="flex-1 space-y-1">
+        <p class="text-xs text-muted-foreground">Goals & Objectives
+        </p>
+        <textarea :value="event.goals || ''" rows="3"
+          placeholder="What are the goals for this event?"
+          class="w-full px-3 py-1.5 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          @blur="handleFieldSave('goals', ($event.target as HTMLTextAreaElement).value || null)" />
+      </div>
     </div>
 
     <!-- Type -->

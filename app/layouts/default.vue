@@ -105,6 +105,11 @@ onMounted(() => {
               <Settings class="w-4 h-4" />
               Settings
             </NuxtLink>
+            <NuxtLink to="/settings/tasks"
+              class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors w-full">
+              <Settings class="w-4 h-4" />
+              Task Templates
+            </NuxtLink>
             <button
               class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors w-full text-destructive"
               @click="handleLogout">
