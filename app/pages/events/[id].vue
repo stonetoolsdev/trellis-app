@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { CalendarDays, MapPin, Video, Users, ChevronRight, Camera } from 'lucide-vue-next'
+import { ChevronRight, Camera, Plus } from 'lucide-vue-next'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import EventDetails from '~/components/events/EventDetails.vue'
-import EventRoleAssignments from '~/components/events/EventRoleAssignments.vue'
-import EventInventoryNeeds from '~/components/events/EventInventoryNeeds.vue'
+import TaskLists from '@/components/TaskLists.vue'
+import Comments from '@/components/Comments.vue'
+import EventDetails from '@/components/events/EventDetails.vue'
+import EventRoleAssignments from '@/components/events/EventRoleAssignments.vue'
+import EventInventoryNeeds from '@/components/events/EventInventoryNeeds.vue'
+import EventNoteDrawer from '@/components/events/EventNoteDrawer.vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -17,12 +21,15 @@ interface Event {
   title: string
   slug: string
   description: string | null
+  goals: string | null
   type: string
   format: string
   submission_status: string
   lifecycle_status: string | null
   location: string | null
   virtual_url: string | null
+  featured_photo_url: string | null
+  project_id: string | null
   start_date: string | null
   end_date: string | null
   rejection_reason: string | null
@@ -43,6 +50,16 @@ interface Event {
       assignees: { id: string, name: string }[]
       subtasks: any[]
     }[]
+  }[]
+  role_assignments: any[]
+  inventory: any[]
+  notes: {
+    id: string
+    title: string
+    body: any
+    user: { id: string, name: string }
+    created_at: string
+    updated_at: string
   }[]
   comments: {
     id: string
@@ -73,46 +90,19 @@ const submissionColors: Record<string, string> = {
   rejected: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 }
 
-async function handleFieldSave(field: string, value: string | null) {
-  await request(`/api/v1/events/${route.params.id}`, {
-    method: 'PUT',
-    body: { [field]: value },
-  })
-  refresh()
-}
+const lifecycleLabel = computed(() =>
+  event.value?.data?.lifecycle_status?.replace('_', ' ') || 'Not started'
+)
 
-function formatDate(date: string | null) {
-  if (!date) return null
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
+const nextLifecycleLabel = computed(() => {
+  const current = event.value?.data?.lifecycle_status
+  if (!current) return ''
+  return lifecycleSteps[lifecycleSteps.indexOf(current) + 1]?.replace('_', ' ') || ''
+})
 
 async function handleAdvance() {
   await request(`/api/v1/events/${route.params.id}/advance`, { method: 'POST' })
   refresh()
-}
-
-// Comments
-const newComment = ref('')
-
-async function handleAddComment() {
-  if (!newComment.value.trim()) return
-  try {
-    const comment = await request<any>(`/api/v1/events/${route.params.id}/comments`, {
-      method: 'POST',
-      body: { body: newComment.value },
-    })
-    if (event.value?.data?.comments) {
-      event.value.data.comments.push({
-        id: comment.id,
-        body: comment.body,
-        user: { id: authStore.user!.id, name: authStore.user!.name },
-        created_at: comment.created_at,
-      })
-    }
-    newComment.value = ''
-  } catch (e) {
-    console.log('error:', e)
-  }
 }
 
 const photoInput = ref<HTMLInputElement | null>(null)
@@ -136,151 +126,158 @@ async function handlePhotoUpload(e: Event) {
     photoLoading.value = false
   }
 }
+
+const notesDrawerOpen = ref(false)
+const selectedNote = ref<any | null>(null)
+
+function openNewNote() {
+  selectedNote.value = null
+  notesDrawerOpen.value = true
+}
+
+function openNote(note: any) {
+  selectedNote.value = note
+  notesDrawerOpen.value = true
+}
 </script>
 
 <template>
-  <NuxtLayout>
-    <div v-if="pending" class="p-10 text-sm text-muted-foreground">
-      Loading...</div>
+<NuxtLayout>
+  <div v-if="pending" class="p-10 text-sm text-muted-foreground">
+    Loading...</div>
 
-    <div v-else-if="event?.data" class="p-10 space-y-10 max-w-4xl">
+  <div v-else-if="event?.data" class="flex flex-col h-full">
 
-
-
-      <!-- Header -->
-      <div class="space-y-4">
-        <div class="flex items-start justify-between gap-4">
-          <h1 class="text-3xl font-semibold">{{ event.data.title }}
-          </h1>
-          <div class="flex items-center gap-2 shrink-0">
-            <span
-              :class="['text-xs px-2.5 py-1 rounded-full font-medium capitalize', submissionColors[event.data.submission_status]]">
-              {{ event.data.submission_status.replace('_', ' ') }}
-            </span>
-            <span v-if="event.data.lifecycle_status"
-              :class="['text-xs px-2.5 py-1 rounded-full font-medium capitalize', lifecycleColors[event.data.lifecycle_status]]">
-              {{ event.data.lifecycle_status.replace('_', ' ') }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Featured Photo -->
-        <div class="relative">
-          <div v-if="event.data.featured_photo_url"
-            class="w-full h-48 rounded-xl overflow-hidden bg-muted">
-            <img :src="event.data.featured_photo_url"
-              class="w-full h-full object-cover" />
-          </div>
-          <div v-else
-            class="w-full h-48 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
-            @click="photoInput?.click()">
-            <div class="text-center space-y-2">
-              <Camera class="w-8 h-8 text-muted-foreground mx-auto" />
-              <p class="text-sm text-muted-foreground">Click to upload
-                a featured photo</p>
-            </div>
-          </div>
-
-          <!-- Change photo button when photo exists -->
-          <button v-if="event.data.featured_photo_url"
-            class="absolute bottom-3 right-3 px-3 py-1.5 text-xs rounded-md bg-black/50 text-white hover:bg-black/70 transition-colors flex items-center gap-1.5"
-            @click="photoInput?.click()">
-            <Camera class="w-3.5 h-3.5" />
-            Change photo
-          </button>
-
-          <input ref="photoInput" type="file" accept="image/*"
-            class="hidden" @change="handlePhotoUpload" />
-        </div>
-
-        <!-- Editable details -->
-        <EventDetails :event="event.data" :is-admin="isAdmin ?? false"
-          @saved="refresh()" />
-
-        <!-- Admin workflow actions -->
-        <div
-          v-if="isAdmin && event.data.submission_status === 'approved' && event.data.lifecycle_status !== 'completed'"
-          class="flex items-center gap-3 pt-2">
-          <div class="flex-1">
-            <p class="text-xs text-muted-foreground mb-1">Current
-              stage</p>
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-medium capitalize">
-                {{ event.data.lifecycle_status?.replace('_', ' ') ||
-                  'Not started' }}</span>
-              <ChevronRight class="w-4 h-4 text-muted-foreground" />
-              <span class="text-sm text-muted-foreground capitalize">
-                {{
-                  lifecycleSteps[lifecycleSteps.indexOf(event.data.lifecycle_status!)
-                    + 1]?.replace('_', ' ') }}
-              </span>
-            </div>
-          </div>
-          <Button @click="handleAdvance">
-            Advance to {{
-              lifecycleSteps[lifecycleSteps.indexOf(event.data.lifecycle_status!)
-                + 1]?.replace('_', ' ') }}
-            <ChevronRight class="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-      </div>
-
-      <TaskLists context-type="event" :context-id="event.data.id"
-        :task-lists="event.data.task_lists" @refresh="refresh()" />
-
-      <EventRoleAssignments :event-id="event.data.id"
-        :assignments="event.data.role_assignments || []"
-        @refresh="refresh()" />
-
-      <EventInventoryNeeds :event-id="event.data.id"
-        :inventory="event.data.inventory || []"
-        @refresh="refresh()" />
-
-      <!-- Comments -->
-      <div class="space-y-4">
-        <h2 class="text-lg font-semibold">Comments</h2>
-
-        <div v-if="!event.data.comments?.length"
-          class="text-sm text-muted-foreground">
-          No comments yet.
-        </div>
-
-        <div class="space-y-4">
-          <div v-for="comment in event.data.comments"
-            :key="comment.id" class="flex gap-3">
-            <div
-              class="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium shrink-0">
-              {{ comment.user.name[0] }}
-            </div>
-            <div class="flex-1 space-y-1">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-medium">{{ comment.user.name
-                }}</span>
-                <span class="text-xs text-muted-foreground">{{
-                  formatDate(comment.created_at) }}</span>
-              </div>
-              <div class="text-sm text-muted-foreground"
-                v-html="comment.body" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Add comment -->
-        <div class="flex gap-3 pt-2">
-          <div
-            class="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium shrink-0">
-            {{ authStore.user?.name?.[0] }}
-          </div>
-          <div class="flex-1 space-y-2">
-            <textarea v-model="newComment" rows="3"
-              placeholder="Add a comment..."
-              class="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
-            <Button size="sm"
-              @click="handleAddComment">Comment</Button>
-          </div>
-        </div>
-      </div>
-
+    <!-- Featured Photo -->
+    <div v-if="event.data.featured_photo_url"
+      class="w-full h-48 overflow-hidden shrink-0">
+      <img :src="event.data.featured_photo_url"
+        class="w-full h-full object-cover" />
     </div>
-  </NuxtLayout>
+    <div v-else
+      class="w-full h-32 border-b border-dashed border-border flex items-center justify-center bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors shrink-0"
+      @click="photoInput?.click()">
+      <div
+        class="flex items-center gap-2 text-sm text-muted-foreground">
+        <Camera class="w-4 h-4" />
+        Add featured photo
+      </div>
+    </div>
+    <input ref="photoInput" type="file" accept="image/*"
+      class="hidden" @change="handlePhotoUpload" />
+
+    <!-- Header -->
+    <div class="px-10 py-6 border-b border-border space-y-3 shrink-0">
+      <div class="flex items-start justify-between gap-4">
+        <h1 class="text-3xl font-semibold">{{ event.data.title }}</h1>
+        <div class="flex items-center gap-2 shrink-0">
+          <span
+            :class="['text-xs px-2.5 py-1 rounded-full font-medium capitalize', submissionColors[event.data.submission_status]]">
+            {{ event.data.submission_status.replace('_', ' ') }}
+          </span>
+          <span v-if="event.data.lifecycle_status"
+            :class="['text-xs px-2.5 py-1 rounded-full font-medium capitalize', lifecycleColors[event.data.lifecycle_status]]">
+            {{ event.data.lifecycle_status.replace('_', ' ') }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Advance button -->
+      <div
+        v-if="isAdmin && event.data.submission_status === 'approved' && event.data.lifecycle_status !== 'completed'"
+        class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium capitalize">{{
+            lifecycleLabel }}</span>
+          <ChevronRight class="w-4 h-4 text-muted-foreground" />
+          <span class="text-sm text-muted-foreground capitalize">{{
+            nextLifecycleLabel }}</span>
+        </div>
+        <Button size="sm" @click="handleAdvance">
+          Advance to {{ nextLifecycleLabel }}
+          <ChevronRight class="w-4 h-4 ml-1" />
+        </Button>
+      </div>
+    </div>
+
+    <!-- Details -->
+    <div class="px-10 py-6 border-b border-border shrink-0">
+      <EventDetails :event="event.data" :is-admin="isAdmin"
+        @saved="refresh()" />
+    </div>
+
+    <!-- Tabs -->
+    <div class="px-10 py-6 flex-1 min-h-96">
+      <Tabs default-value="tasks">
+        <TabsList class="mb-6">
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="people">People</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="comments">Comments</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tasks">
+          <TaskLists context-type="event" :context-id="event.data.id"
+            :task-lists="event.data.task_lists"
+            @refresh="refresh()" />
+        </TabsContent>
+
+        <TabsContent value="people">
+          <EventRoleAssignments :event-id="event.data.id"
+            :assignments="event.data.role_assignments || []"
+            @refresh="refresh()" />
+        </TabsContent>
+
+        <TabsContent value="inventory">
+          <EventInventoryNeeds :event-id="event.data.id"
+            :inventory="event.data.inventory || []"
+            @refresh="refresh()" />
+        </TabsContent>
+
+        <TabsContent value="notes">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-lg font-semibold">Notes</h2>
+              <Button size="sm" variant="outline"
+                @click="openNewNote">
+                <Plus class="w-4 h-4 mr-1" />
+                Add Note
+              </Button>
+            </div>
+            <div v-if="!event.data.notes?.length"
+              class="text-sm text-muted-foreground">
+              No notes yet.
+            </div>
+            <div class="space-y-2">
+              <button v-for="note in event.data.notes" :key="note.id"
+                class="w-full flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors text-left"
+                @click="openNote(note)">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium">{{ note.title }}</p>
+                  <p class="text-xs text-muted-foreground mt-0.5">{{
+                    note.user.name }} · {{ new
+                      Date(note.created_at).toLocaleDateString() }}</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="comments">
+          <Comments commentable-type="events"
+            :commentable-id="event.data.id"
+            :comments="event.data.comments" @refresh="refresh()" />
+        </TabsContent>
+      </Tabs>
+    </div>
+
+  </div>
+
+  <!-- Notes Drawer -->
+  <EventNoteDrawer :open="notesDrawerOpen"
+    :event-id="event?.data?.id || ''" :note="selectedNote"
+    @update:open="notesDrawerOpen = $event" @saved="refresh()" />
+
+</NuxtLayout>
 </template>
