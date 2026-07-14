@@ -103,7 +103,7 @@ onMounted(() => {
         <PopoverContent class="w-56 p-2" side="top" align="start">
           <div class="px-2 py-1.5 mb-1">
             <p class="text-sm font-medium">{{ authStore.user?.name
-            }}</p>
+              }}</p>
             <p class="text-xs text-muted-foreground">{{
               authStore.user?.email }}</p>
           </div>
@@ -134,7 +134,7 @@ onMounted(() => {
 
     <!-- Top bar -->
     <header
-      class="h-14 border-b border-border flex items-center px-4 shrink-0">
+      class="h-14 border-b border-border flex items-center px-4 py-8 shrink-0">
       <button
         class="relative w-full max-w-md flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground rounded-md border border-input bg-background hover:bg-accent transition-colors"
         @click="searchOpen = true">
